@@ -1,6 +1,7 @@
 # QC-backup
 #The backup code to do the Quality Control
 setwd('put the location information here:)')
+
 library(dplyr)
 library(data.table)
 library(fastqcr)
