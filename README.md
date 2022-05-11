@@ -3,21 +3,31 @@
 setwd('put the location information here:)')
 
 library(dplyr)
+
 library(data.table)
+
 library(fastqcr)
+
 library(ggplot2)
+
 options(stringsAsFactors = F)
 
 # fastQC reports
 qc.dir <- list.files('QC/fastQC')
+
 qc <- qc_aggregate(paste0('QC/fastQC/', qc.dir))
+
 qc <- qc %>% mutate(sample = rep(gsub('-\\d+|_S.*', '', qc.dir), each=11))
+
 qc_summ <- summary(qc)
+
 fwrite(qc_summ, 'QC/qc_summary.csv')
 
 qc_stat <- qc_stats(qc)
+
 qc_stat <- as.data.frame(qc_stat) %>%
   mutate(tot.seq = as.numeric(tot.seq))
+
 fwrite(qc_stat, 'QC/qc_stats.csv')
 
 # Number of reads
@@ -33,7 +43,9 @@ ggsave('QC/Numreads.png',
 
 # gene counts (SALMON)
 genes_cnt <- readRDS('expression.rds')  # if expression matrix is ready
+
 colnames(genes_cnt) <- gsub('-BAL-Tri-RNA.*', '', colnames(genes_cnt))
+
 genes <- genes_cnt[rowSums(genes_cnt != 0) > 10,]
 
 pdat <- data.frame(sample = colnames(genes)) %>%
@@ -60,11 +72,14 @@ ggsave('QC/PCA_rawcounts.png',
 
 # boxplot on raw counts
 png('QC/log10_rawcounts.png', width = 1000, height = 800)
+
 boxplot(log10(genes+1), las=2)
+
 dev.off()
 
 # library size
 plotdat = data.frame(Sum=colSums(genes_cnt), sampl=colnames(genes_cnt))
+
 ggsave('QC/Libsize.png', 
        ggplot(plotdat, aes(x=sampl, y=Sum/1e6))+
          geom_point()+
@@ -76,12 +91,15 @@ ggsave('QC/Libsize.png',
 
 # PCA against seq date
 sdate <- readLines('info/DISARM_BAL_seq_date.txt')
+
 sdate <- data.frame(sample = sdate[seq(1, 239, by = 2)], 
                     date = sdate[seq(2, 240, by = 2)])
+
 sdate <- filter(sdate, grepl('DIS', sample)) %>%
   mutate(sample = gsub('-BAL-Tri-RNA.*', '', sample))
 
 genes <- genes[, sdate$sample]
+
 pca <- prcomp(t(genes), scale. = TRUE)
 
 ggsave('QC/PCA_rawcounts_seq_date.png',
